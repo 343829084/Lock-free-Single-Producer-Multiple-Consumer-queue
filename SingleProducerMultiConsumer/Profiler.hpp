@@ -1,5 +1,5 @@
 /*************************************************************************/
-/** Contains the header for the Profiler class from debugging.
+/** Contains the definition of the Profiler class from debugging.
 
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.

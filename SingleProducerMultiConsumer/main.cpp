@@ -4,7 +4,7 @@
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
 **************************************************************************/
-//#define DEBUG_THREADS
+#define DEBUG_THREADS
 #define MULTI_THREADING
 #include <iostream>
 #include <string>
@@ -94,52 +94,61 @@ int main ( )
 {
 	using zachariahs_world::debugging::Profiler;
 	using zachariahs_world::parallelism::ForkJoinModel;
-	using zachariahs_world::parallelism::cout_mutex;
+	using zachariahs_world::parallelism::OStreamLock;
 	using namespace std::chrono_literals;
 
+	try
+	{
 #if defined MULTI_THREADING
-	ForkJoinModel parallelism_model;
+		ForkJoinModel parallelism_model;
 #endif
 
 #if defined DEBUG_THREADS
-	constexpr auto num_tests = std::size_t { 10 };
+		constexpr auto num_tests = std::size_t { 10 };
 #else
-	constexpr auto num_tests = std::size_t { 10000 };
+		constexpr auto num_tests = std::size_t { 10000 };
 #endif
-	constexpr auto num_objects = std::size_t { 10000 };
-	constexpr auto delta_time = 0.001f;
-	Profiler profiler;
+		constexpr auto num_objects = std::size_t { 10000 };
+		constexpr auto delta_time = 0.001f;
+		Profiler profiler;
 
-	std::vector<GameObject> game_objects { num_objects };
+		std::vector<GameObject> game_objects { num_objects };
 
-	for ( auto i = std::size_t { }; i < num_tests; ++i )
-	{
-		profiler.start ( );
-#if defined MULTI_THREADING
-		const auto num_objects_per_frame = game_objects.size ( ) / parallelism_model.num_threads;
-		const auto game_objects_begin = game_objects.begin ( );
-
-		parallelism_model.run ( [ game_objects_begin, num_objects_per_frame, delta_time ] ( const std::size_t thread_index )
+		for ( auto i = std::size_t { }; i < num_tests; ++i )
 		{
-			const auto start_index = num_objects_per_frame * thread_index;
-			UpdateGameObjects ( game_objects_begin + start_index, num_objects_per_frame, delta_time );
-		} );
+			profiler.start ( );
+#if defined MULTI_THREADING
+			const auto num_objects_per_frame = game_objects.size ( ) / parallelism_model.num_threads;
+			const auto game_objects_begin = game_objects.begin ( );
+
+			parallelism_model.run ( [ game_objects_begin, num_objects_per_frame, delta_time ] ( const std::size_t thread_index )
+			{
+				const auto start_index = num_objects_per_frame * thread_index;
+				UpdateGameObjects ( game_objects_begin + start_index, num_objects_per_frame, delta_time );
+			} );
 #else
-		UpdateGameObjects ( game_objects.begin ( ), game_objects.size ( ), delta_time );
+			UpdateGameObjects ( game_objects.begin ( ), game_objects.size ( ), delta_time );
 #endif
-		profiler.end ( );
+			profiler.end ( );
+		}
+
+		auto profile = profiler.flush ( );
+
+		{
+			OStreamLock lock;
+			std::cout << "Average: " << profile.mean << "ns\n";
+			std::cout << "Highest: " << profile.highest << "ns\n";
+			std::cout << "Lowest: " << profile.lowest << "ns\n";
+			std::cout << "Median: " << profile.median << "ns\n";
+			std::cout << "Standard deviation: " << profile.standard_deviation << "ns\n";
+			std::system ( "pause" );
+		}
 	}
-
-	auto profile = profiler.flush ( );
-
+	catch ( const std::exception& exception )
 	{
-		std::lock_guard<std::mutex> cout_guard { cout_mutex };
-		std::cout << "Average: " << profile.mean << "ns\n";
-		std::cout << "Highest: " << profile.highest << "ns\n";
-		std::cout << "Lowest: " << profile.lowest << "ns\n";
-		std::cout << "Median: " << profile.median << "ns\n";
-		std::cout << "Standard deviation: " << profile.standard_deviation << "ns\n";
-		std::system ( "pause" );
+		std::cout << exception.what ( ) << '\n';
 	}
+
+	system ( "pause" );
 	return EXIT_SUCCESS;
 }

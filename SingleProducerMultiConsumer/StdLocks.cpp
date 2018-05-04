@@ -1,20 +1,15 @@
 /*************************************************************************/
-/** Contains the definition of the TaskBasedModel class from parallelism.
+/** Contains the implementation of classes representing locks for the
+standard's globals.
 
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
 **************************************************************************/
-#pragma once
-#include <thread>
-#include "SPMCQueue.hpp"
+#include "StdLocks.hpp"
 
 namespace zachariahs_world
 {
 	namespace parallelism
 	{
-		class TaskBasedModel
-		{
-
-		};
 	}
 }

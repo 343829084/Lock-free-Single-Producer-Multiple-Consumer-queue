@@ -1,5 +1,5 @@
 /*************************************************************************/
-/** Contains the header for the ForkJoinModel class from parallelism.
+/** Contains the definition of the ForkJoinModel class from parallelism.
 
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
@@ -8,14 +8,14 @@ Copyright (C) 2017-2018 Zachariah The Magnificent.
 #include <functional>
 #include <thread>
 #include <atomic>
-#include <mutex>
+#if defined DEBUG_THREADS
+#include "StdLocks.hpp"
+#endif
 
 namespace zachariahs_world
 {
 	namespace parallelism
 	{
-		std::mutex cout_mutex;
-
 		class ForkJoinModel
 		{
 		public:
@@ -43,7 +43,7 @@ namespace zachariahs_world
 						}
 
 #if defined DEBUG_THREADS
-						std::lock_guard<std::mutex> d { cout_mutex };
+						OStreamLock lock;
 						std::cout << "Thread " << i << ": Destorying myself lol!\n";
 #endif
 					} } );
@@ -86,7 +86,7 @@ namespace zachariahs_world
 
 #if defined DEBUG_THREADS
 				{
-					std::lock_guard<std::mutex> d { cout_mutex };
+					OStreamLock lock;
 					std::cout << "Thread " << thread_index << ": Returning to main thread!\n";
 				}
 #endif
@@ -97,14 +97,14 @@ namespace zachariahs_world
 			{
 #if defined DEBUG_THREADS
 				{
-					std::lock_guard<std::mutex> d { cout_mutex };
+					OStreamLock lock;
 					std::cout << "Thread " << thread_index << ": Running task!\n";
 				}
 #endif
 				( *algorithm ) ( thread_index );
 #if defined DEBUG_THREADS
 				{
-					std::lock_guard<std::mutex> d { cout_mutex };
+					OStreamLock lock;
 					std::cout << "Thread " << thread_index << ": Task has finished!\n";
 				}
 #endif
@@ -118,7 +118,7 @@ namespace zachariahs_world
 				}
 #if defined DEBUG_THREADS
 				{
-					std::lock_guard<std::mutex> d { cout_mutex };
+					OStreamLock lock;
 					std::cout << "Thread " << thread_index << ": All tasks done! Exiting!\n";
 				}
 #endif

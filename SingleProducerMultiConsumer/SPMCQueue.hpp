@@ -1,5 +1,5 @@
 /*************************************************************************/
-/** Contains the header for the SPMPQueue class from parallelism.
+/** Contains the definition of the SPMPQueue class from parallelism.
 
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.

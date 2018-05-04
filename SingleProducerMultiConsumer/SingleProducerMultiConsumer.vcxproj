@@ -119,11 +119,13 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Profiler.cpp" />
+    <ClCompile Include="StdLocks.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ForkJoinModel.hpp" />
     <ClInclude Include="Profiler.hpp" />
     <ClInclude Include="SPMCQueue.hpp" />
+    <ClInclude Include="StdLocks.hpp" />
     <ClInclude Include="TaskBasedModel.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
