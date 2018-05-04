@@ -1,5 +1,5 @@
 /*************************************************************************/
-/** Contains the header for the Thread Pool class from parallelism.
+/** Contains the header for the ForkJoinModel class from parallelism.
 
 Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
@@ -8,35 +8,35 @@ Copyright (C) 2017-2018 Zachariah The Magnificent.
 #include <functional>
 #include <thread>
 #include <atomic>
-#if defined DEBUG_THREADS
 #include <mutex>
-#endif
 
 namespace zachariahs_world
 {
 	namespace parallelism
 	{
-
-#if defined DEBUG_THREADS
 		std::mutex cout_mutex;
-#endif
 
-		class ThreadPool
+		class ForkJoinModel
 		{
 		public:
-			using Task = std::function<void ( const std::size_t thread_index )>;
+			using Algorithm = std::function<void ( const std::size_t thread_index )>;
 
-			ThreadPool ( )
+			inline static const std::size_t num_threads = std::thread::hardware_concurrency ( );
+
+			ForkJoinModel ( )
 			{
+				// Number of threads minus the main thread.
 				threads.reserve ( num_threads - 1 );
 
 				for ( auto i = static_cast< std::size_t > ( 1 ); i < num_threads; ++i )
 				{
 					threads.push_back ( std::thread { [ this, i ]
 					{
+						// No need for synchronisation. We synchronise at join() instead.
 						while ( !exit.load ( std::memory_order_relaxed ) )
 						{
-							if ( running_threads_left.load ( std::memory_order_acquire ) > 0 )
+							// If there are tasks to be done.
+							if ( tasks_left.load ( std::memory_order_acquire ) > 0 )
 							{
 								run_task ( i );
 							}
@@ -49,33 +49,39 @@ namespace zachariahs_world
 					} } );
 				}
 			}
-			~ThreadPool ( )
+			~ForkJoinModel ( )
 			{
+#if defined DEBUG_THREADS
+				std::cout << "Thread 0: Destroying myself lol!\n";
+#endif
+
+				// No need for synchronisation. join() already synchronises for us.
 				exit.store ( true, std::memory_order_relaxed );
 
 				for ( auto it = threads.begin ( ), end = threads.end ( ); it != end; ++it )
 				{
 					it->join ( );
 				}
-
-#if defined DEBUG_THREADS
-				std::cout << "Thread 0: Destroying myself lol!\n";
-				system ( "pause" );
-#endif
 			}
 
-			void run ( const Task& task )
+			void run ( const Algorithm& algorithm )
 			{
 				constexpr auto thread_index = 0;
-				this->task = &task;
 
-				// Make sure that all threads are avaliable before running the task.
+				// Okay to change the algorithm here since all threads should be done with the last algorithm after the previous run() returns.
+				this->algorithm = &algorithm;
+
+				// Make sure that all threads are available before creating more tasks.
+				// No need for synchronisation since we have synchronised through tasks_left and we are going to synchronise through it again later.
 				while ( available_threads.load ( std::memory_order_relaxed ) != num_threads )
 				{
 				}
+				// Reset.
 				available_threads.store ( 0, std::memory_order_relaxed );
-				running_threads_left.store ( num_threads, std::memory_order_release );
+				// Create tasks for the threads to run.
+				tasks_left.store ( num_threads, std::memory_order_release );
 
+				// Run a task ourselves and then return only if all threads have finished with their tasks.
 				run_task ( thread_index );
 
 #if defined DEBUG_THREADS
@@ -84,11 +90,6 @@ namespace zachariahs_world
 					std::cout << "Thread " << thread_index << ": Returning to main thread!\n";
 				}
 #endif
-			}
-
-			std::size_t size ( ) const
-			{
-				return num_threads;
 			}
 
 		private:
@@ -100,7 +101,7 @@ namespace zachariahs_world
 					std::cout << "Thread " << thread_index << ": Running task!\n";
 				}
 #endif
-				( *task ) ( thread_index );
+				( *algorithm ) ( thread_index );
 #if defined DEBUG_THREADS
 				{
 					std::lock_guard<std::mutex> d { cout_mutex };
@@ -108,47 +109,32 @@ namespace zachariahs_world
 				}
 #endif
 
-				// If we are the last thread to finish.
-				if ( running_threads_left.load ( std::memory_order_acquire ) == 1 )
+				// If there are still some tasks left.
+				if ( tasks_left.fetch_sub ( 1, std::memory_order_acq_rel ) > 1 )
 				{
-#if defined DEBUG_THREADS
+					while ( tasks_left.load ( std::memory_order_acquire ) != 0 )
 					{
-						std::lock_guard<std::mutex> d { cout_mutex };
-						std::cout << "Thread " << thread_index << ": All tasks done! Joining!\n";
 					}
-#endif
-					join ( );
-					running_threads_left.store ( 0, std::memory_order_release );
 				}
-				else
+#if defined DEBUG_THREADS
 				{
-					running_threads_left.fetch_sub ( 1, std::memory_order_release );
-					while ( running_threads_left.load ( std::memory_order_acquire ) != 0 )
-					{
-					}
-#if defined DEBUG_THREADS
-					{
-						std::lock_guard<std::mutex> d { cout_mutex };
-						std::cout << "Thread " << thread_index << ": All tasks done! Exiting!\n";
-					}
-#endif
+					std::lock_guard<std::mutex> d { cout_mutex };
+					std::cout << "Thread " << thread_index << ": All tasks done! Exiting!\n";
 				}
+#endif
 
+				// Signal to the main thread that we are avaliable again.
+				// No need to synchronise since we have already synchronised through tasks_left.
 				available_threads.fetch_add ( 1, std::memory_order_relaxed );
 			}
-			void join ( )
-			{
-			}
-
-			const std::size_t num_threads = std::thread::hardware_concurrency ( );
 
 			std::vector<std::thread> threads;
 
 			std::atomic_bool exit { false };
-			std::atomic_size_t running_threads_left { 0 };
+			std::atomic_size_t tasks_left { 0 };
 			std::atomic_size_t available_threads { num_threads };
 
-			const Task* task;
+			const Algorithm* algorithm;
 		};
 	}
 }

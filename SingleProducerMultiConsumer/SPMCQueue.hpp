@@ -5,7 +5,6 @@ Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
 **************************************************************************/
 #pragma once
-#include <thread>
 #include <atomic>
 
 namespace zachariahs_world
@@ -18,7 +17,7 @@ namespace zachariahs_world
 		static constexpr auto capacity = static_cast<std::size_t> ( 1024 );
 
 		// Final class will be templated. Use aliases while testing first.
-		class Queue
+		class SPMCQueue
 		{
 		public:
 			template<typename...Types>

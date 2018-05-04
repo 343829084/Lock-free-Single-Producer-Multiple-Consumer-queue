@@ -121,9 +121,10 @@
     <ClCompile Include="Profiler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ForkJoinModel.hpp" />
     <ClInclude Include="Profiler.hpp" />
-    <ClInclude Include="SPMPQueue.hpp" />
-    <ClInclude Include="ThreadPool.hpp" />
+    <ClInclude Include="SPMCQueue.hpp" />
+    <ClInclude Include="TaskBasedModel.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

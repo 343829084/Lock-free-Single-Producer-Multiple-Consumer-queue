@@ -5,13 +5,13 @@ Copyright (C) 2017-2018 Zachariah The Magnificent.
 <zachariahthemagnificent@gmail.com>.
 **************************************************************************/
 //#define DEBUG_THREADS
-//#define MULTI_THREADING
+#define MULTI_THREADING
 #include <iostream>
 #include <string>
 #include <array>
 #include "Profiler.hpp"
-#include "SPMPQueue.hpp"
-#include "ThreadPool.hpp"
+#include "TaskBasedModel.hpp"
+#include "ForkJoinModel.hpp"
 
 struct Vector : std::array<float, 3>
 {
@@ -93,32 +93,16 @@ void UpdateGameObjects ( const std::vector<GameObject>::iterator game_objects, c
 int main ( )
 {
 	using zachariahs_world::debugging::Profiler;
-	using zachariahs_world::parallelism::ThreadPool;
-	using zachariahs_world::parallelism::Queue;
+	using zachariahs_world::parallelism::ForkJoinModel;
+	using zachariahs_world::parallelism::cout_mutex;
+	using namespace std::chrono_literals;
 
-	//constexpr auto size = sizeof ( zachariahs_world::parallelism::Queue );
-	//constexpr auto alignment = alignof ( zachariahs_world::parallelism::Queue );
-	//constexpr auto num_cache_lines = size / zachariahs_world::cache_line_size;
-
-	//Queue queue;
-
-	//// Test if it works for single threaded programs first.
-
-	//queue.push ( 3 );
-	//queue.push ( 2 );
-	//queue.push ( 1 );
-	//auto [ result1, value1 ] = queue.pop ( );
-	//auto [ result2, value2 ] = queue.pop ( );
-	//auto [ result3, value3 ] = queue.pop ( );
-
-	//std::cout << value1 << '\n';
-	//std::cout << value2 << '\n';
-	//std::cout << value3 << '\n';
-	
-	ThreadPool thread_pool;
+#if defined MULTI_THREADING
+	ForkJoinModel parallelism_model;
+#endif
 
 #if defined DEBUG_THREADS
-	constexpr auto num_tests = std::size_t { 2 };
+	constexpr auto num_tests = std::size_t { 10 };
 #else
 	constexpr auto num_tests = std::size_t { 10000 };
 #endif
@@ -132,10 +116,10 @@ int main ( )
 	{
 		profiler.start ( );
 #if defined MULTI_THREADING
-		const auto num_objects_per_frame = game_objects.size ( ) / thread_pool.size ( );
+		const auto num_objects_per_frame = game_objects.size ( ) / parallelism_model.num_threads;
 		const auto game_objects_begin = game_objects.begin ( );
 
-		thread_pool.run ( [ game_objects_begin, num_objects_per_frame, delta_time ] ( const std::size_t thread_index )
+		parallelism_model.run ( [ game_objects_begin, num_objects_per_frame, delta_time ] ( const std::size_t thread_index )
 		{
 			const auto start_index = num_objects_per_frame * thread_index;
 			UpdateGameObjects ( game_objects_begin + start_index, num_objects_per_frame, delta_time );
@@ -149,9 +133,7 @@ int main ( )
 	auto profile = profiler.flush ( );
 
 	{
-#if defined DEBUG_THREADS
-		std::lock_guard<std::mutex> cout_guard { zachariahs_world::parallelism::cout_mutex };
-#endif
+		std::lock_guard<std::mutex> cout_guard { cout_mutex };
 		std::cout << "Average: " << profile.mean << "ns\n";
 		std::cout << "Highest: " << profile.highest << "ns\n";
 		std::cout << "Lowest: " << profile.lowest << "ns\n";
