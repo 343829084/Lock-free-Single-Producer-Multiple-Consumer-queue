@@ -1,7 +1,9 @@
+#define DEBUG_THREADS
 #include <iostream>
 #include <string>
 #include "Profiler.hpp"
 #include "SPMPQueue.hpp"
+#include "ThreadPool.hpp"
 
 int main ( )
 {
