@@ -1,3 +1,10 @@
+/*************************************************************************/
+/** Contains the header for the SPMPQueue class from parallelism.
+
+Copyright (C) 2017-2018 Zachariah The Magnificent.
+<zachariahthemagnificent@gmail.com>.
+**************************************************************************/
+#pragma once
 #include <thread>
 #include <atomic>
 

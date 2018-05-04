@@ -1,43 +1,55 @@
+/*************************************************************************/
+/** Contains the header for the Profiler class from debugging.
+
+Copyright (C) 2017-2018 Zachariah The Magnificent.
+<zachariahthemagnificent@gmail.com>.
+**************************************************************************/
 #pragma once
 #include <vector>
 #include <algorithm>
 #include <numeric>
 #include <chrono>
 
-class Profiler
+namespace zachariahs_world
 {
-public:
-	using clock = std::chrono::steady_clock;
-	using time_point = clock::time_point;
-	using duration = clock::duration;
-	using rep = duration::rep;
-
-	struct Profile
+	namespace debugging
 	{
-		Profile ( ) = default;
-		explicit Profile ( const rep& lowest, const rep& highest, const rep& median, const rep& mean, const rep& standard_deviation ) noexcept;
+		class Profiler
+		{
+		public:
+			using clock = std::chrono::steady_clock;
+			using time_point = clock::time_point;
+			using duration = clock::duration;
+			using rep = duration::rep;
 
-		rep lowest { };
-		rep highest { };;
-		rep median { };
-		rep mean { };
-		rep standard_deviation { };
-	};
+			struct Profile
+			{
+				Profile ( ) = default;
+				explicit Profile ( const rep& lowest, const rep& highest, const rep& median, const rep& mean, const rep& standard_deviation ) noexcept;
 
-	Profiler ( ) = default;
-	explicit Profiler ( const size_t size );
+				rep lowest { };
+				rep highest { };;
+				rep median { };
+				rep mean { };
+				rep standard_deviation { };
+			};
 
-	static Profiler& current ( ) noexcept;
-	void make_current ( ) noexcept;
+			Profiler ( ) = default;
+			explicit Profiler ( const size_t size );
 
-	void start ( );
-	void end ( );
+			static Profiler& current ( ) noexcept;
+			void make_current ( ) noexcept;
 
-	Profile flush ( );
+			void start ( );
+			void end ( );
 
-private:
-	static Profiler* global;
+			Profile flush ( );
 
-	std::vector<rep> data_points_;
-	time_point last_time_point_;
-};
+		private:
+			static Profiler* global;
+
+			std::vector<rep> data_points_;
+			time_point last_time_point_;
+		};
+	}
+}
