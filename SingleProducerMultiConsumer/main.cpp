@@ -9,6 +9,7 @@ Copyright (C) 2017-2018 Zachariah The Magnificent.
 #include <iostream>
 #include <string>
 #include <array>
+#include "StdLocks.hpp"
 #include "Profiler.hpp"
 #include "TaskBasedModel.hpp"
 #include "ForkJoinModel.hpp"
